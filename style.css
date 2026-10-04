@@ -1,0 +1,989 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   لونا — چت‌بات
+   style.css — پوسته و طراحی
+   
+   پالت:
+   - خاکستری (پایه): بک‌گراند، سطح، متن، border
+   - کورال #FF6B5A (اکسنت کاربر): حباب‌های خودی، دکمه ارسال
+   - فیروزه‌ای #14B8A6 (اکسنت لونا): آواتار، وضعیت، عناصر بصری
+   
+   اصول:
+   - راست‌چین سراسری
+   - ۳ رنگ حداکثر (خاکستری + ۲ اکسنت)
+   - shadow حداقلی
+   - انیمیشن‌های GPU-friendly (transform + opacity)
+   - safe-area برای موبایل
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══ ۱. Reset ═══ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+img, svg, video {
+    display: block;
+    max-width: 100%;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+textarea {
+    outline: none;
+    resize: none;
+    border: none;
+    background: none;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+/* ═══ ۲. متغیرها ═══ */
+:root {
+    /* ── فونت ── */
+    --font: 'Vazirmatn', Tahoma, system-ui, -apple-system, sans-serif;
+
+    /* ── پالت خاکستری — تم روشن ── */
+    --bg: #F5F5F7;
+    --surface: #FFFFFF;
+    --surface-2: #F0F0F2;
+    --surface-3: #E8E8EC;
+
+    --text: #1A1A1F;
+    --text-soft: #4A4A52;
+    --text-mute: #85858E;
+    --text-faint: #B5B5BE;
+
+    --border: rgba(0, 0, 0, 0.06);
+    --border-hi: rgba(0, 0, 0, 0.10);
+
+    /* ── اکسنت کاربر — کورال ── */
+    --coral: #FF6B5A;
+    --coral-soft: #FF8A7A;
+    --coral-deep: #E5503E;
+    --coral-tint: rgba(255, 107, 90, 0.10);
+
+    /* ── اکسنت لونا — فیروزه‌ای ── */
+    --teal: #14B8A6;
+    --teal-soft: #2BCFC0;
+    --teal-deep: #0E9488;
+    --teal-tint: rgba(20, 184, 166, 0.10);
+
+    /* ── حباب‌ها ── */
+    --bubble-bot-bg: #EDEDEF;
+    --bubble-bot-tx: #1A1A1F;
+    --bubble-user-bg: #FF6B5A;
+    --bubble-user-tx: #1A1A1F;
+
+    /* ── سایه (فقط ۱ عدد) ── */
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    /* ── Radius ── */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 18px;
+    --r-xl: 24px;
+    --r-pill: 100px;
+
+    /* ── Easing ── */
+    --ez: cubic-bezier(0.4, 0, 0.2, 1);
+    --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+    /* ── Layout ── */
+    --content-max: 860px;
+    --header-h: 64px;
+}
+
+/* ── تم تاریک ── */
+html[data-theme="dark"] {
+    --bg: #0F0F12;
+    --surface: #1A1A1E;
+    --surface-2: #232328;
+    --surface-3: #2E2E34;
+
+    --text: #F0F0F5;
+    --text-soft: #B5B5BE;
+    --text-mute: #85858E;
+    --text-faint: #5A5A63;
+
+    --border: rgba(255, 255, 255, 0.06);
+    --border-hi: rgba(255, 255, 255, 0.12);
+
+    --coral: #FF7B6A;
+    --coral-soft: #FF9080;
+    --coral-deep: #E5604E;
+    --coral-tint: rgba(255, 123, 106, 0.12);
+
+    --teal: #2BCFC0;
+    --teal-soft: #4DD8CB;
+    --teal-deep: #14B8A6;
+    --teal-tint: rgba(43, 207, 192, 0.12);
+
+    --bubble-bot-bg: #232328;
+    --bubble-bot-tx: #F0F0F5;
+    --bubble-user-bg: #FF7B6A;
+    --bubble-user-tx: #1A1A1F;
+
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ═══ ۳. Base ═══ */
+html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+body {
+    font-family: var(--font);
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.7;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: right;
+    transition: background 0.3s var(--ez), color 0.3s var(--ez);
+}
+
+/* ═══ ۴. ساختار App ═══ */
+.app {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100dvh;
+    max-height: 100dvh;
+    background: var(--bg);
+    overflow: hidden;
+}
+
+/* ═══ ۵. هدر ═══ */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    padding-top: max(10px, env(safe-area-inset-top));
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+/* چیدمان داخلی هدر — با max-width برای دسکتاپ */
+.chat-header::before,
+.chat-header::after {
+    content: '';
+    flex: 0;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    max-width: var(--content-max);
+}
+
+.bot-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--teal);
+    color: #FFFFFF;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.bot-avatar::after {
+    /* نقطه آنلاین */
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--teal-soft);
+    border: 2px solid var(--surface);
+    animation: onlinePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes onlinePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+.bot-avatar svg {
+    width: 20px;
+    height: 20px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.bot-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+
+.bot-status {
+    font-size: 12px;
+    color: var(--teal-deep);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+html[data-theme="dark"] .bot-status {
+    color: var(--teal);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* ═══ ۶. دکمه‌های آیکون ═══ */
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--r-md);
+    display: grid;
+    place-items: center;
+    color: var(--text-mute);
+    transition: background 0.2s var(--ez), color 0.2s var(--ez), transform 0.1s var(--ez);
+}
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.icon-btn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.icon-btn:active {
+    transform: scale(0.94);
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 2px;
+}
+
+/* ═══ ۷. منطقه پیام‌ها ═══ */
+.chat-messages {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hi) transparent;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* محتوای داخلی — محدود به max-width */
+.chat-messages::before,
+.chat-messages::after {
+    content: '';
+    flex: 0 0 0;
+}
+
+.chat-messages > * {
+    max-width: var(--content-max);
+    width: 100%;
+    margin: 0 auto;
+    flex-shrink: 0;
+}
+
+/* برای اینکه محتوا وسط دسکتاپ قرار بگیره، ولی پیام‌ها به لبه‌ها بچسبن */
+.chat-messages > .msg,
+.chat-messages > .system-note,
+.chat-messages > .msg-system {
+    width: 100%;
+    max-width: var(--content-max);
+}
+
+/* ── اسکرول‌بار ── */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--border-hi);
+    border-radius: 100px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
+}
+
+/* ═══ ۸. پیام‌ها ═══ */
+.msg {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    animation: msgAppear 0.3s var(--spring) both;
+    content-visibility: auto;
+    contain-intrinsic-size: 60px 100px;
+}
+
+@keyframes msgAppear {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── پیام کاربر (راست) ── */
+.msg-user {
+    justify-content: flex-start; /* در RTL = راست */
+    padding-right: 4px;
+}
+
+.msg-user .msg-bubble {
+    background: var(--bubble-user-bg);
+    color: var(--bubble-user-tx);
+    border-bottom-right-radius: 6px; /* دنباله سمت راست */
+    max-width: min(76%, 560px);
+}
+
+.msg-user .msg-meta {
+    color: rgba(26, 26, 31, 0.55);
+}
+
+html[data-theme="dark"] .msg-user .msg-meta {
+    color: rgba(26, 26, 31, 0.65);
+}
+
+/* ── پیام لونا (چپ) ── */
+.msg-bot {
+    justify-content: flex-end; /* در RTL = چپ */
+    padding-left: 4px;
+}
+
+.msg-bot .msg-bubble {
+    background: var(--bubble-bot-bg);
+    color: var(--bubble-bot-tx);
+    border-bottom-left-radius: 6px; /* دنباله سمت چپ */
+    max-width: min(76%, 560px);
+}
+
+.msg-bot .msg-meta {
+    color: var(--text-mute);
+}
+
+/* ── آواتار لونا داخل پیام ── */
+.msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--teal);
+    color: #FFFFFF;
+    flex-shrink: 0;
+    align-self: flex-end;
+    margin-bottom: 2px;
+}
+
+.msg-avatar svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ── حباب ── */
+.msg-bubble {
+    padding: 10px 14px;
+    border-radius: var(--r-lg);
+    font-size: 15px;
+    line-height: 1.7;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    position: relative;
+    min-width: 60px;
+    box-shadow: var(--shadow);
+}
+
+/* ── محتوای پیام ── */
+.msg-content {
+    font-weight: 400;
+    letter-spacing: 0.005em;
+    white-space: pre-wrap;
+}
+
+.msg-content br {
+    line-height: 1.7;
+}
+
+/* ── متادیتای پیام (ساعت) ── */
+.msg-meta {
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 4px;
+    text-align: left; /* ساعت همیشه چپ */
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+}
+
+.msg-user .msg-meta {
+    text-align: left;
+}
+
+.msg-bot .msg-meta {
+    text-align: right;
+}
+
+/* ── پیام سیستمی ── */
+.msg-system {
+    display: flex;
+    justify-content: center;
+    animation: msgAppear 0.3s var(--ez) both;
+}
+
+.system-note {
+    padding: 8px 16px;
+    border-radius: var(--r-pill);
+    background: var(--surface-2);
+    color: var(--text-mute);
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.6;
+    max-width: 80%;
+}
+
+/* ═══ ۹. نشانگر تایپ ═══ */
+.typing-indicator {
+    display: none;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 0 16px 8px;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    width: 100%;
+    justify-content: flex-end; /* چپ مثل پیام‌های لونا */
+    animation: msgAppear 0.2s var(--ez) both;
+}
+
+.typing-indicator.visible {
+    display: flex;
+}
+
+.typing-indicator .msg-avatar {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 0;
+}
+
+.typing-indicator .msg-avatar svg {
+    width: 16px;
+    height: 16px;
+}
+
+.typing-bubble {
+    background: var(--bubble-bot-bg);
+    padding: 12px 16px;
+    border-radius: var(--r-lg);
+    border-bottom-left-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: var(--shadow);
+}
+
+.typing-bubble span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-mute);
+    animation: typingDot 1.4s ease-in-out infinite;
+}
+
+.typing-bubble span:nth-child(1) { animation-delay: 0s; }
+.typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+.typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDot {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+/* ═══ ۱۰. منطقه ورودی ═══ */
+.chat-input-area {
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 6px 6px 6px 16px;
+    border-radius: var(--r-xl);
+    background: var(--surface-2);
+    border: 1px solid transparent;
+    transition: border-color 0.2s var(--ez), background 0.2s var(--ez);
+    max-width: var(--content-max);
+    margin: 0 auto;
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--coral);
+    background: var(--surface);
+}
+
+.chat-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 36px;
+    max-height: 140px;
+    padding: 6px 4px;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+    text-align: right;
+    font-family: var(--font);
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.chat-input::placeholder {
+    color: var(--text-faint);
+    font-weight: 400;
+}
+
+.chat-input::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-input::-webkit-scrollbar-thumb {
+    background: var(--border-hi);
+    border-radius: 100px;
+}
+
+/* ── دکمه ارسال ── */
+.send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--coral);
+    color: #1A1A1F;
+    flex-shrink: 0;
+    transition: background 0.2s var(--ez), transform 0.15s var(--spring);
+    box-shadow: 0 2px 6px rgba(255, 107, 90, 0.25);
+}
+
+html[data-theme="dark"] .send-btn {
+    color: #1A1A1F;
+    box-shadow: 0 2px 6px rgba(255, 123, 106, 0.3);
+}
+
+.send-btn svg {
+    width: 18px;
+    height: 18px;
+    /* آینه کردن آیکون ارسال برای RTL */
+    transform: scaleX(-1);
+}
+
+.send-btn:hover {
+    background: var(--coral-soft);
+    transform: scale(1.05);
+}
+
+.send-btn:active {
+    background: var(--coral-deep);
+    transform: scale(0.96);
+}
+
+.send-btn:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 3px;
+}
+
+.send-btn:disabled {
+    background: var(--surface-3);
+    color: var(--text-faint);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.send-btn:disabled:hover {
+    transform: none;
+    background: var(--surface-3);
+}
+
+/* ── راهنمای پایین ── */
+.input-hint {
+    display: flex;
+    justify-content: center;
+    margin-top: 6px;
+    max-width: var(--content-max);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.input-hint span {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.01em;
+    opacity: 0.8;
+}
+
+/* ═══ ۱۱. لینک‌ها و منشن داخل پیام ═══ */
+.msg-content a {
+    color: var(--teal-deep);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition: color 0.15s;
+}
+
+html[data-theme="dark"] .msg-content a {
+    color: var(--teal-soft);
+}
+
+.msg-content a:hover {
+    color: var(--teal);
+}
+
+.msg-user .msg-content a {
+    color: #1A1A1F;
+    text-decoration-color: rgba(26, 26, 31, 0.4);
+}
+
+/* ── کد و pre ── */
+.msg-content code {
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    direction: ltr;
+    display: inline-block;
+}
+
+html[data-theme="dark"] .msg-content code {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.msg-user .msg-content code {
+    background: rgba(26, 26, 31, 0.1);
+}
+
+/* ═══ ۱۲. دسترس‌پذیری ═══ */
+:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+button:focus-visible,
+textarea:focus-visible {
+    outline-offset: 2px;
+}
+
+/* ── Screen reader only ── */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ═══ ۱۳. Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .msg,
+    .typing-indicator {
+        animation: none !important;
+    }
+
+    .bot-avatar::after {
+        animation: none !important;
+    }
+
+    .typing-bubble span {
+        animation: none !important;
+        opacity: 1;
+    }
+}
+
+/* ═══ ۱۴. Responsive ═══ */
+@media (max-width: 768px) {
+    :root {
+        --header-h: 58px;
+    }
+
+    .chat-header {
+        padding: 8px 12px;
+        padding-top: max(8px, env(safe-area-inset-top));
+    }
+
+    .bot-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .bot-avatar svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .bot-name {
+        font-size: 15px;
+    }
+
+    .bot-status {
+        font-size: 11px;
+    }
+
+    .icon-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .icon-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .chat-messages {
+        padding: 16px 12px;
+        gap: 8px;
+    }
+
+    .msg-bubble {
+        padding: 9px 12px;
+        font-size: 14.5px;
+        border-radius: 16px;
+        max-width: 82%;
+    }
+
+    .msg-user .msg-bubble {
+        border-bottom-right-radius: 5px;
+    }
+
+    .msg-bot .msg-bubble {
+        border-bottom-left-radius: 5px;
+    }
+
+    .msg-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .msg-avatar svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .typing-indicator {
+        padding: 0 12px 6px;
+    }
+
+    .typing-indicator .msg-avatar {
+        width: 28px;
+        height: 28px;
+    }
+
+    .typing-indicator .msg-avatar svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .typing-bubble {
+        padding: 10px 14px;
+    }
+
+    .chat-input-area {
+        padding: 10px 12px;
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+
+    .input-wrapper {
+        padding: 5px 5px 5px 12px;
+    }
+
+    .chat-input {
+        font-size: 14.5px;
+    }
+
+    .send-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .send-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .input-hint span {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 400px) {
+    .msg-bubble {
+        max-width: 88%;
+        font-size: 14px;
+        padding: 8px 11px;
+    }
+
+    .bot-name {
+        font-size: 14.5px;
+    }
+
+    .chat-messages {
+        padding: 12px 10px;
+    }
+}
+
+/* ═══ ۱۵. ارتفاع کم (landscape) ═══ */
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --header-h: 52px;
+    }
+
+    .chat-messages {
+        padding: 10px 16px;
+    }
+
+    .chat-input-area {
+        padding: 8px 16px;
+    }
+
+    .msg-bubble {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+}
+
+/* ═══ ۱۶. دسکتاپ بزرگ ═══ */
+@media (min-width: 1024px) {
+    .chat-messages {
+        padding: 24px 24px;
+        gap: 12px;
+    }
+
+    .msg-bubble {
+        font-size: 15.5px;
+        padding: 11px 16px;
+    }
+
+    .msg-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .msg-avatar svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* ═══ ۱۷. Print ═══ */
+@media print {
+    .chat-header,
+    .chat-input-area,
+    .typing-indicator {
+        display: none !important;
+    }
+
+    .app {
+        position: static;
+        height: auto;
+        display: block;
+    }
+
+    .chat-messages {
+        overflow: visible;
+        height: auto;
+    }
+
+    .msg-bubble {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+      }
